@@ -338,7 +338,9 @@ deploy_app() {
     git -C "$repo" rev-parse --git-dir >/dev/null 2>&1 \
         || { log "$name: $repo is not a readable git repo, skipping"; return 0; }
 
-    remote=$(git -C "$repo" ls-remote origin "refs/heads/$branch" 2>/dev/null | cut -f1)
+    # `|| true`: under pipefail a failed ls-remote (exit 128, e.g. the SSH agent
+    # is locked) would otherwise abort the whole tick silently under set -e.
+    remote=$(git -C "$repo" ls-remote origin "refs/heads/$branch" 2>/dev/null | cut -f1) || true
     [[ -n "$remote" ]] || { log "$name: cannot reach origin/$branch, retrying next tick"; return 0; }
 
     deployed=$(cat "$state" 2>/dev/null || true)
